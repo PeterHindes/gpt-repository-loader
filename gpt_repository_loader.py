@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
-
 import os
 import sys
 import fnmatch
+
+#!/usr/bin/env python3
+
 
 def get_ignore_list(ignore_file_path):
     ignore_list = []
@@ -13,10 +14,20 @@ def get_ignore_list(ignore_file_path):
             ignore_list.append(line.strip())
     return ignore_list
 
+def is_ascii(file_path):
+    try:
+        with open(file_path, 'r', errors='ignore') as file:
+            file.read().encode('ascii')
+    except (UnicodeDecodeError, FileNotFoundError, UnicodeEncodeError):
+        return False
+    return True
+
 def should_ignore(file_path, ignore_list):
     for pattern in ignore_list:
         if fnmatch.fnmatch(file_path, pattern):
             return True
+    if not is_ascii(file_path):
+        return True
     return False
 
 def process_repository(repo_path, ignore_list, output_file):
@@ -25,7 +36,7 @@ def process_repository(repo_path, ignore_list, output_file):
             file_path = os.path.join(root, file)
             relative_file_path = os.path.relpath(file_path, repo_path)
 
-            if not should_ignore(relative_file_path, ignore_list):
+            if not should_ignore(file_path, ignore_list):
                 with open(file_path, 'r', errors='ignore') as file:
                     contents = file.read()
                 output_file.write("-" * 4 + "\n")
@@ -71,4 +82,3 @@ if __name__ == "__main__":
     with open(output_file_path, 'a') as output_file:
         output_file.write("--END--")
     print(f"Repository contents written to {output_file_path}.")
-    
